@@ -92,3 +92,67 @@
     /* Forcer l'affichage des couleurs au cas où */
     body { -print-color-adjust: exact; }
 }
+/* Container des boutons de quantité */
+.qty-control {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 12px;
+    margin-top: 10px;
+}
+
+.qty-control span {
+    font-size: 0.9em;
+    color: #444;
+}
+
+/* Style des boutons + et - */
+.qty-btn {
+    width: 35px;
+    height: 35px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #333;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.2s ease;
+    margin: 0 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Effet au clic */
+.qty-btn:active {
+    transform: scale(0.9);
+    background-color: #e0e0e0;
+}
+
+/* Couleur spécifique pour le + (optionnel) */
+.qty-btn:last-child {
+    color: #4caf50;
+}
+
+/* Couleur spécifique pour le - (optionnel) */
+.qty-btn:first-child {
+    color: #f44336;
+}
+
+/* Amélioration des cartes pour mobile */
+.set-card {
+    background: white;
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    transition: transform 0.2s;
+}
+
+.set-card:hover {
+    transform: translateY(-5px);
+}

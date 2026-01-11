@@ -84,7 +84,7 @@
             </div>
 <div class="grid">
     <div class="set-card">
-        <img src="https://images.rebrickable.com/mg/sets/set-75192-1.jpg" alt="">
+        <img src="" alt="">
         <div class="set-info">
             <div class="set-title">
             </div>
@@ -137,7 +137,7 @@
     </thead>
     <tbody>
         <tr style="border-bottom: 1px solid #eee; text-align:center;">
-            <td><img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="40"></td>
+            <td><img src="" width="40"></td>
             <td></td>
             <td></td>
             <td style="color: #d32f2f; font-weight:bold;"></td>
@@ -150,7 +150,7 @@
         </tbody>
 </table>
 <div class="piece-row" style="display: flex; align-items: center; background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-    <img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="50" style="margin-right: 20px;">
+    <img src="" width="50" style="margin-right: 20px;">
     
     <div style="flex: 1;">
         <div style="font-weight: bold;"></div>
@@ -218,26 +218,88 @@ async function uploadImage(input) {
 }
 </script>
 <script>
-        // 1. CONFIGURATION
-        const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
-            const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
-        const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // 1. CONFIGURATION
+    const SB_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
+    const SB_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
+    const REBRICK_KEY = 'c54e689ff20915c537d968ffe15a3745';
 
-        // 2. FONCTIONS DE CHARGEMENT (Au démarrage)
-        window.onload = async () => {
-            await chargerCollection();
-            await calculerFinance();
-        };
+    // On utilise 'clientSupabase' pour éviter le conflit avec la bibliothèque 'supabase'
+    const clientSupabase = supabase.createClient(SB_URL, SB_KEY);
 
-        // 3. LOGIQUE API & SCANNER
-        // (Copiez ici : ajouterNouveauSet, onScanSuccess)
+    window.onload = async () => {
+        console.log("Système prêt !");
+        alert("Connexion établie !"); // Si cette alerte apparaît, la base de données est liée
+        await chargerCollection();
+    };
 
-        // 4. LOGIQUE STOCKAGE & VRAC
-        // (Copiez ici : verifierPiecesManquantes, uploadImage)
+    // 2. FONCTION AJOUTER (CORRIGÉE)
+    async function ajouterNouveauSet() {
+        const input = document.getElementById('setSearchInput');
+        const setNum = input.value;
+        if (!setNum) return alert("Indiquez un numéro !");
 
-        // 5. EXPORTS
-        // (Copiez ici : exporterExcel, exporterVersBrickLink)
-    </script>
+        try {
+            // Recherche sur Rebrickable
+            const resp = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
+                headers: { 'Authorization': `key ${REBRICK_KEY}` }
+            });
+            const data = await resp.json();
+
+            if (!data.set_num) return alert("Set introuvable sur Rebrickable");
+
+            // Insertion dans Supabase
+            const { error } = await clientSupabase.from('sets_possedes').insert([{
+                set_num: data.set_num,
+                nom: data.name,
+                image_url: data.set_img_url,
+                quantite: 1
+            }]);
+
+            if (error) throw error;
+
+            alert("Set ajouté !");
+            input.value = "";
+            await chargerCollection(); // Rafraîchit la liste sans recharger la page
+        } catch (err) {
+            console.error(err);
+            alert("Erreur : " + err.message);
+        }
+    }
+
+    // 3. CHARGER LA COLLECTION
+    async function chargerCollection() {
+        const grid = document.getElementById('setsGrid');
+        if (!grid) return;
+
+        const { data: sets, error } = await clientSupabase.from('sets_possedes').select('*');
+        
+        if (error) return console.log("Erreur de chargement");
+
+        grid.innerHTML = ""; // Vide la grille
+        sets.forEach(set => {
+            grid.innerHTML += `
+                <div class="set-card">
+                    <img src="${set.image_url}" width="100%">
+                    <div class="set-info">
+                        <strong>${set.set_num}</strong><br>${set.nom}
+                        <div class="qty-control">
+                            <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
+                            <span>${set.quantite}</span>
+                            <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
+                        </div>
+                    </div>
+                </div>`;
+        });
+    }
+
+    // 4. MODIFIER QUANTITÉ
+    async function modifierQte(id, diff) {
+        const { data } = await clientSupabase.from('sets_possedes').select('quantite').eq('id', id).single();
+        const nouvelleQte = Math.max(0, data.quantite + diff);
+        
+        await clientSupabase.from('sets_possedes').update({ quantite: nouvelleQte }).eq('id', id);
+        await chargerCollection();
+    }
+</script>
 </body>
 </html>
