@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Mon Stock Lego</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="scriptheet" href="script.js">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="script.js"></script>
+<body>
+
+<header>
+    <h1>Ma Collection Lego</h1>
+</header>
+
+<div class="stats-bar">
+    <div class="stat-card">
+        <h3>Total Sets</h3>
+        <p>124</p>
+    </div>
+    <div class="stat-card" style="border-left-color: #4caf50;">
+        <h3>Pièces en Stock</h3>
+        <p>45 230</p>
+    </div>
+    <div class="stat-card" style="border-left-color: #ff9800;">
+        <h3>Minifigures</h3>
+        <p>312</p>
+    </div>
+</div>
+<div class="search-container">
+    <input type="text" placeholder="Entrez un numéro de set (ex: 75192)...">
+    <button>Ajouter au Stock</button>
+</div>
+
+<div class="grid">
+    <div class="set-card">
+        <img src="https://images.rebrickable.com/mg/sets/set-75192-1.jpg" alt="Millennium Falcon">
+        <div class="set-info">
+            <div class="set-title">75192 - Millennium Falcon</div>
+            <div class="set-stats">7541 pièces | Star Wars</div>
+            <div class="qty-control">
+                <span>Stock: <strong>1</strong></span>
+                <div>
+                    <button class="qty-btn">-</button>
+                    <button class="qty-btn">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="search-container">
+    <input type="text" id="searchPiece" placeholder="Chercher une pièce par réf (ex: 3001)...">
+    <button onclick="rechercherPiece()">Chercher dans mon Vrac</button>
+</div>
+
+<div id="resultatRecherche">
+    </div>
+
+
+<h2 style="margin-top:40px;">Gestion du Vrac (Pièces détachées)</h2>
+<table style="width:100%; background:white; border-collapse: collapse; border-radius: 8px; overflow:hidden;">
+    <thead style="background:#333; color:white;">
+        <tr>
+            <th style="padding:10px;">Image</th>
+            <th>Réf</th>
+            <th>Couleur</th>
+            <th>Localisation</th>
+            <th>Stock</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr style="border-bottom: 1px solid #eee; text-align:center;">
+            <td><img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="40"></td>
+            <td>3001</td>
+            <td>Rouge</td>
+            <td style="color: #d32f2f; font-weight:bold;">Tiroir A-01</td>
+            <td>
+                <button class="qty-btn">-</button>
+                <strong>42</strong>
+                <button class="qty-btn">+</button>
+            </td>
+        </tr>
+        </tbody>
+</table>
+<div class="piece-row" style="display: flex; align-items: center; background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="50" style="margin-right: 20px;">
+    
+    <div style="flex: 1;">
+        <div style="font-weight: bold;">Brique 2 x 4 (3001)</div>
+        <div style="font-size: 0.8em; color: #666;">
+            📍 Étagère A > Meuble Rouge > <span style="color: #d32f2f; font-weight: bold;">Tiroir 12</span>
+        </div>
+    </div>
+
+    <div class="qty-control">
+        <button class="qty-btn">-</button>
+        <strong>142</strong>
+        <button class="qty-btn">+</button>
+    </div>
+</div>
+</body>
+<button onclick="window.print()" class="btn-add" style="background: #4caf50;">🖨️ Imprimer les étiquettes</button>
+
+
+
+<div class="label-grid" id="etiqContainer">
+    </div>
+    <div id="reader" style="width: 300px; margin: 20px auto; border-radius: 10px; overflow: hidden;"></div>
+
+<script>
+    function onScanSuccess(decodedText, decodedResult) {
+        // decodedText contient le code barre (EAN) de la boîte
+        alert("Code détecté : " + decodedText);
+        
+        // Ici, on peut chercher le set correspondant. 
+        // Note : Rebrickable permet de chercher par code EAN !
+        chercherSetParCodeBarre(decodedText);
+    }
+
+    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
+    html5QrcodeScanner.render(onScanSuccess);
+</script>
+
+</html>
