@@ -1,101 +1,116 @@
-// 1. CONFIGURATION (Toujours en premier)
+
+ // CONFIGURATION
 const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
 const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
 
-// Utilisation d'un nom différent pour ne pas confondre avec la bibliothèque
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialisation du client (attention au nom pour éviter les conflits)
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-alert("Script chargé et connecté !");
+window.onload = async () => {
+    console.log("Appli chargée");
+    await chargerCollection();
+};
 
-// 2. FONCTIONS DE CHARGEMENT
-async function chargerStock() {
-    console.log("Tentative de chargement du stock...");
-    const { data, error } = await supabaseClient
-        .from('sets_possedes')
-        .select('*');
+// --- FONCTION POUR LES BOUTONS + ET - ---
+async function ajusterQuantite(table, id, changement) {
+    // 1. Récupérer la ligne actuelle
+    const { data, error } = await sb.from(table).select('quantite').eq('id', id).single();
+    
+    if (error) return console.error(error);
 
-    if (error) console.error("Erreur chargement :", error.message);
-    if (data) {
-        console.log("Données chargées :", data);
-        // Ici tu pourras appeler une fonction pour afficher tes cartes
+    const nouvelleQte = Math.max(0, (data.quantite || 0) + changement);
+
+    // 2. Mise à jour
+    const { error: updateError } = await sb.from(table).update({ quantite: nouvelleQte }).eq('id', id);
+
+    if (!updateError) {
+        // Au lieu de recharger toute la page, on rafraîchit juste les données
+        chargerCollection(); 
     }
 }
 
-// Lancer le chargement une fois que tout est prêt
-window.onload = () => {
-    chargerStock();
-    if(document.getElementById('totalInvesti')) calculerFinance();
-};
-
-// 3. AJOUT DE SET
-async function ajouterNouveauSet() {
-    // On essaie de trouver l'input par ID, c'est plus sûr
-    const input = document.getElementById('setSearchInput') || document.querySelector('input');
-    const setNum = input.value; 
-
-    if (!setNum) return alert("Veuillez entrer un numéro de set");
-
-    console.log("Recherche du set :", setNum);
-
-    const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
-        headers : { 'Authorization': `key ${REBRICKABLE_KEY}`}
-    });
-
-    if (!response.ok) return alert("Set non trouvé sur Rebrickable");
-    const data = await response.json();
-
-    const { data: dbData, error } = await supabaseClient
-        .from('sets_possedes')
-        .insert([{ 
-            set_num: data.set_num, 
-            nom: data.name, 
-            image_url: data.set_img_url,
-            nb_pieces: data.num_parts,
-            quantite: 1 
-        }])
-        .select();
-
-    if (error) {
-        alert("Erreur Supabase : " + error.message);
-    } else {
-        alert("Set ajouté !");
-        location.reload(); // Recharge la page pour voir le nouveau set
-    } 
-}
-
-// 4. RECHERCHE DE PIÈCE
-async function rechercherPiece() {
-    const input = document.getElementById('searchPiece');
-    if(!input) return;
-    const ref = input.value;
-    const container = document.getElementById('resultatRecherche');
+// --- CHARGER LES SETS DEPUIS SUPABASE ---
+async function chargerCollection() {
+    const { data: sets, error } = await sb.from('sets_possedes').select('*');
+    const grid = document.getElementById('setsGrid');
     
-    container.innerHTML = "Recherche en cours...";
+    if (!grid) return;
+    grid.innerHTML = ""; // On vide pour reconstruire
 
-    const { data, error } = await supabaseClient
-        .from('pieces_inventaire')
-        .select(`*, emplacements (nom, parent_id)`)
-        .eq('piece_num', ref);
-
-    if (data && data.length > 0) {
-        container.innerHTML = "";
-        data.forEach(item => {
-            container.innerHTML += `
-                <div class="piece-row" style="background:white; padding:15px; border-radius:10px; display:flex; align-items:center; margin-bottom:10px; shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                    <img src="${item.image_url}" width="60" style="margin-right:20px;">
-                    <div style="flex:1;">
-                        <div style="font-weight:bold;">${item.nom_piece} (${item.piece_num})</div>
-                        <div style="color: #d32f2f; font-size:0.9em;">📍 Emplacement : ${item.emplacements?.nom || 'Non défini'}</div>
-                        <div style="font-size:0.8em; color:#888;">Couleur : ${item.couleur}</div>
+    if (sets) {
+        sets.forEach(set => {
+            grid.innerHTML += `
+                <div class="set-card">
+                    <img src="${set.image_url}" alt="${set.nom}">
+                    <div class="set-info">
+                        <div class="set-title">${set.set_num} - ${set.nom}</div>
+                        <div class="qty-control">
+                            <span>Stock: <strong>${set.quantite}</strong></span>
+                            <div>
+                                <button class="qty-btn" onclick="ajusterQuantite('sets_possedes', ${set.id}, -1)">-</button>
+                                <button class="qty-btn" onclick="ajusterQuantite('sets_possedes', ${set.id}, 1)">+</button>
+                            </div>
+                        </div>
                     </div>
-                    <div style="font-size:1.5em; font-weight:bold;">x${item.quantite}</div>
                 </div>
             `;
         });
-    } else {
-        container.innerHTML = "<p>Vous n'avez pas cette pièce en stock.</p>";
     }
 }
 
-// ... Garde tes autres fonctions (exporterExcel, etc.) en remplaçant 'supabase' par 'supabaseClient'
+// --- AJOUTER UN NOUVEAU SET ---
+async function ajouterNouveauSet() {
+    const input = document.getElementById('setSearchInput');
+    const setNum = input.value;
+    if (!setNum) return;
+
+    // Fetch Rebrickable
+    const resp = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
+        headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
+    });
+    const data = await resp.json();
+
+    if (data.set_num) {
+        const { error } = await sb.from('sets_possedes').insert([{
+            set_num: data.set_num,
+            nom: data.name,
+            image_url: data.set_img_url,
+            quantite: 1
+        }]);
+        
+        if (!error) {
+            input.value = "";
+            chargerCollection();
+        }
+    }
+    // Fonction pour augmenter ou diminuer la quantité d'un set ou d'une pièce
+async function ajusterQuantite(table, id, changement) {
+    console.log(`Ajustement de ${table} ID ${id} de ${changement}`);
+
+    // 1. Récupérer la quantité actuelle depuis Supabase
+    const { data, error: fetchError } = await supabaseClient
+        .from(table)
+        .select('quantite')
+        .eq('id', id)
+        .single();
+
+    if (fetchError) return console.error("Erreur fetch:", fetchError.message);
+
+    const nouvelleQte = Math.max(0, (data.quantite || 0) + changement);
+
+    // 2. Mettre à jour la nouvelle quantité
+    const { error: updateError } = await supabaseClient
+        .from(table)
+        .update({ quantite: nouvelleQte })
+        .eq('id', id);
+
+    if (updateError) {
+        alert("Erreur mise à jour : " + updateError.message);
+    } else {
+        console.log("Quantité mise à jour !");
+        // On rafraîchit l'affichage
+        location.reload(); 
+    }
+}
+}

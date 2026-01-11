@@ -10,10 +10,8 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        /* Insérez ici tous les styles que nous avons créés ensemble */
-        /* (Stats bar, Grid, Set cards, Label Design, Media queries pour Print) */
-    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
 </head>
 <body>
 
@@ -52,7 +50,7 @@
 <div class="stats-bar">
     <div class="stat-card">
         <h3>Total Sets</h3>
-        <p>124</p>
+        <p></p>
     </div>
     <div class="stats-bar">
     <div class="stat-card" style="border-left-color: #2196f3;">
@@ -73,11 +71,11 @@
 </div>
     <div class="stat-card" style="border-left-color: #4caf50;">
         <h3>Pièces en Stock</h3>
-        <p>45 230</p>
+        <p></p>
     </div>
     <div class="stat-card" style="border-left-color: #ff9800;">
         <h3>Minifigures</h3>
-        <p>312</p>
+        <p></p>
     </div>
 </div>
 <div class="search-container">
@@ -86,31 +84,35 @@
             </div>
 <div class="grid">
     <div class="set-card">
-        <img src="https://images.rebrickable.com/mg/sets/set-75192-1.jpg" alt="Millennium Falcon">
+        <img src="https://images.rebrickable.com/mg/sets/set-75192-1.jpg" alt="">
         <div class="set-info">
-            <div class="set-title">75192 - Millennium Falcon</div>
-            <div class="set-stats">7541 pièces | Star Wars</div>
+            <div class="set-title">
+            </div>
+            <div class="set-stats">
+            </div>
             <div class="qty-control">
                 <span>Stock: <strong>1</strong></span>
                 <div>
-                    <button class="qty-btn">-</button>
-                    <button class="qty-btn">+</button>
+                    <button onclick="ajusterQuantite('sets_possedes', 0, -1)">-</button>
+                    <span>Quantité</span>
+                    <button onclick="ajusterQuantite('sets_possedes', 0, 1)">+</button>
                 </div>
             </div>
         </div>
     </div>
     <div class="set-card">
-    <div class="badge-etat">NEUF</div> <img src="set_image.jpg">
+    <div class="badge-etat"></div> <img src="set_image.jpg">
     <div class="set-info">
-        <div class="set-title">75192 - Millennium Falcon</div>
+        <div class="set-title">
+        </div>
         <div class="finance-info" style="display: flex; justify-content: space-between; font-size: 0.85em; margin: 10px 0;">
-            <span>💰 Achat: <strong>650€</strong></span>
+            <span>💰 Achat: <strong></strong></span>
             <span>📅 12/2025</span>
         </div>
         <div class="progress-container" style="background: #eee; height: 10px; border-radius: 5px;">
             <div class="progress-bar" style="width: 85%; background: #4caf50; height: 100%; border-radius: 5px;"></div>
         </div>
-        <p style="font-size: 0.75em; text-align: center;">85% des pièces en stock vrac</p>
+        <p style="font-size: 0.75em; text-align: center;">0% des pièces en stock vrac</p>
     </div>
 </div>
 </div>
@@ -136,13 +138,13 @@
     <tbody>
         <tr style="border-bottom: 1px solid #eee; text-align:center;">
             <td><img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="40"></td>
-            <td>3001</td>
-            <td>Rouge</td>
-            <td style="color: #d32f2f; font-weight:bold;">Tiroir A-01</td>
+            <td></td>
+            <td></td>
+            <td style="color: #d32f2f; font-weight:bold;"></td>
             <td>
-                <button class="qty-btn">-</button>
-                <strong>42</strong>
-                <button class="qty-btn">+</button>
+                <button onclick="qty-btn">-</button>
+                <strong></strong>
+                <button onclick="qty-btn">+</button>
             </td>
         </tr>
         </tbody>
@@ -151,15 +153,15 @@
     <img src="https://rebrickable.com/media/parts/elements/300126.jpg" width="50" style="margin-right: 20px;">
     
     <div style="flex: 1;">
-        <div style="font-weight: bold;">Brique 2 x 4 (3001)</div>
+        <div style="font-weight: bold;"></div>
         <div style="font-size: 0.8em; color: #666;">
-            📍 Étagère A > Meuble Rouge > <span style="color: #d32f2f; font-weight: bold;">Tiroir 12</span>
+            📍 Étagère A > Meuble Rouge > <span style="color: #d32f2f; font-weight: bold;"></span>
         </div>
     </div>
 
     <div class="qty-control">
         <button class="qty-btn">-</button>
-        <strong>142</strong>
+        <strong></strong>
         <button class="qty-btn">+</button>
     </div>
 </div>
