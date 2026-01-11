@@ -36,61 +36,61 @@
             input.value = ""; // Vider le champ
         } 
     }   
- function genererEtiquette(pieceNum, nomPiece, emplacementNom) {
-    const container = document.getElementById('etiqContainer');
+    function genererEtiquette(pieceNum, nomPiece, emplacementNom) {
+        const container = document.getElementById('etiqContainer');
     
-    // Créer l'élément de l'étiquette
-    const label = document.createElement('div');
-    label.className = 'label-card';
-    label.innerHTML = `
-        <div class="label-info">
-            <div style="font-weight:bold; font-size:14px;">${pieceNum}</div>
-            <div style="font-size:10px;">${nomPiece}</div>
-            <div style="color:red; font-weight:bold; margin-top:5px;">${emplacementNom}</div>
-        </div>
-        <div id="qrcode-${pieceNum}" class="label-qr"></div>
-    `;
-    container.appendChild(label);
+        // Créer l'élément de l'étiquette
+        const label = document.createElement('div');
+        label.className = 'label-card';
+        label.innerHTML = `
+            <div class="label-info">
+                <div style="font-weight:bold; font-size:14px;">${pieceNum}</div>
+                <div style="font-size:10px;">${nomPiece}</div>
+                <div style="color:red; font-weight:bold; margin-top:5px;">${emplacementNom}</div>
+            </div>
+            <div id="qrcode-${pieceNum}" class="label-qr"></div>
+        `;
+        container.appendChild(label);
 
-    // Générer le QR Code (on y stocke l'URL de votre appli + la réf)
-    new QRCode(document.getElementById(`qrcode-${pieceNum}`), {
-        text: `https://votre-appli.com/piece?ref=${pieceNum}`,
-        width: 50,
-        height: 50
-    });
-}
-async function onScanSuccess(decodedText) {
-    console.log("Code EAN détecté :", decodedText);
+        // Générer le QR Code (on y stocke l'URL de votre appli + la réf)
+        new QRCode(document.getElementById(`qrcode-${pieceNum}`), {
+            text: `https://votre-appli.com/piece?ref=${pieceNum}`,
+            width: 50,
+            height: 50
+        });
+    }
+    async function onScanSuccess(decodedText) {
+        console.log("Code EAN détecté :", decodedText);
     
-    // On cherche le set correspondant sur Rebrickable via le paramètre de recherche
-    // Rebrickable accepte les codes barres dans sa recherche de sets
-    const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/?search=${decodedText}`, {
-        headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
-    });
+        // On cherche le set correspondant sur Rebrickable via le paramètre de recherche
+        // Rebrickable accepte les codes barres dans sa recherche de sets
+        const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/?search=${decodedText}`, {
+            headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
+        });
 
-    const data = await response.json();
+        const data = await response.json();
 
-    if (data.results && data.results.length > 0) {
-        const set = data.results[0]; // On prend le premier résultat trouvé
-        const confirmer = confirm(`Ajouter le set : ${set.name} (${set.set_num}) ?`);
+        if (data.results && data.results.length > 0) {
+            const set = data.results[0]; // On prend le premier résultat trouvé
+            const confirmer = confirm(`Ajouter le set : ${set.name} (${set.set_num}) ?`);
         
         if (confirmer) {
             sauvegarderDansSupabase(set);
         }
-    } else {
+    }else {
         alert("Ce code-barre ne correspond à aucun set Lego connu.");
     }
-}
-    // Configuration de votre connexion
-    const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
-    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+        // Configuration de votre connexion
+            const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
+            const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    // Fonction pour charger vos sets depuis la base de données au démarrage
-    async function chargerStock() {
-        const { data, error } = await supabase
-            .from('sets_possedes')
-            .select('*');
+        // Fonction pour charger vos sets depuis la base de données au démarrage
+        async function chargerStock() {
+            const { data, error } = await supabase
+                .from('sets_possedes')
+                .select('*');
 
         if (data) {
             console.log("Données chargées :", data);
@@ -100,10 +100,10 @@ async function onScanSuccess(decodedText) {
 
     chargerStock();
     
-async function rechercherPiece() {
-    const ref = document.getElementById('searchPiece').value;
-    const container = document.getElementById('resultatRecherche');
-    container.innerHTML = "Recherche en cours...";
+    async function rechercherPiece() {
+        const ref = document.getElementById('searchPiece').value;
+        const container = document.getElementById('resultatRecherche');
+        container.innerHTML = "Recherche en cours...";
 
     // Requête complexe : on récupère la pièce ET les infos de son emplacement
     const { data, error } = await supabase
@@ -135,4 +135,54 @@ async function rechercherPiece() {
     } else {
         container.innerHTML = "<p>Vous n'avez pas cette pièce en stock.</p>";
     }
+    }
+    async function exporterExcel() {
+        // 1. Récupérer les données de Supabase
+        const { data, error } = await supabase.from('pieces_inventaire').select('*');
+    
+        if (error) return alert("Erreur lors de l'export");
+
+        // 2. Créer le contenu du fichier (En-têtes + Lignes)
+        let csvContent = "Reference;Nom;Couleur;Quantite;Emplacement\n";
+    
+        data.forEach(item => {
+            csvContent += `${item.piece_num};${item.nom_piece};${item.couleur};${item.quantite};${item.emplacement_id}\n`;
+        });
+
+        // 3. Créer le lien de téléchargement
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", "mon_stock_lego.csv");
+            link.click();
+}
+async function verifierPiecesManquantes(setNum) {
+    // 1. Récupérer l'inventaire du set (Rebrickable)
+    const resp = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/parts/`, {
+        headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
+    });
+    const setParts = await resp.json();
+
+    // 2. Récupérer votre stock vrac (Supabase)
+    const { data: monVrac } = await supabase.from('pieces_inventaire').select('*');
+
+    let manquantes = [];
+
+    // 3. Comparaison
+    setParts.results.forEach(p => {
+        const maPiece = monVrac.find(v => v.piece_num === p.part.part_num && v.couleur === p.color.name);
+        const qteEnStock = maPiece ? maPiece.quantite : 0;
+
+        if (qteEnStock < p.quantity) {
+            manquantes.push({
+                num: p.part.part_num,
+                couleur: p.color.name,
+                manquant: p.quantity - qteEnStock,
+                image: p.part.part_img_url
+            });
+        }
+    });
+
+    afficherManquantes(manquantes);
 }

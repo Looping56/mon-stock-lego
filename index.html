@@ -7,6 +7,7 @@
     <link rel="scriptheet" href="script.js">
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
 </head>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="script.js"></script>
@@ -21,6 +22,23 @@
         <h3>Total Sets</h3>
         <p>124</p>
     </div>
+    <div class="stats-bar">
+    <div class="stat-card" style="border-left-color: #2196f3;">
+        <h3>Investissement Total</h3>
+        <p id="totalInvesti">0,00 €</p>
+        <span class="sub-text">Somme des prix d'achat</span>
+    </div>
+    <div class="stat-card" style="border-left-color: #4caf50;">
+        <h3>Valeur de Marché</h3>
+        <p id="valeurMarche">0,00 €</p>
+        <span class="sub-text">Estimation actuelle</span>
+    </div>
+    <div class="stat-card" style="border-left-color: #ffc107;">
+        <h3>Plus-value</h3>
+        <p id="plusValue">+0,00 €</p>
+        <span id="roiPourcent" class="sub-text">0%</span>
+    </div>
+</div>
     <div class="stat-card" style="border-left-color: #4caf50;">
         <h3>Pièces en Stock</h3>
         <p>45 230</p>
@@ -50,6 +68,20 @@
             </div>
         </div>
     </div>
+    <div class="set-card">
+    <div class="badge-etat">NEUF</div> <img src="set_image.jpg">
+    <div class="set-info">
+        <div class="set-title">75192 - Millennium Falcon</div>
+        <div class="finance-info" style="display: flex; justify-content: space-between; font-size: 0.85em; margin: 10px 0;">
+            <span>💰 Achat: <strong>650€</strong></span>
+            <span>📅 12/2025</span>
+        </div>
+        <div class="progress-container" style="background: #eee; height: 10px; border-radius: 5px;">
+            <div class="progress-bar" style="width: 85%; background: #4caf50; height: 100%; border-radius: 5px;"></div>
+        </div>
+        <p style="font-size: 0.75em; text-align: center;">85% des pièces en stock vrac</p>
+    </div>
+</div>
 </div>
 <div class="search-container">
     <input type="text" id="searchPiece" placeholder="Chercher une pièce par réf (ex: 3001)...">
@@ -58,7 +90,6 @@
 
 <div id="resultatRecherche">
     </div>
-
 
 <h2 style="margin-top:40px;">Gestion du Vrac (Pièces détachées)</h2>
 <table style="width:100%; background:white; border-collapse: collapse; border-radius: 8px; overflow:hidden;">
@@ -103,7 +134,7 @@
 </div>
 </body>
 <button onclick="window.print()" class="btn-add" style="background: #4caf50;">🖨️ Imprimer les étiquettes</button>
-
+<button onclick="preparerEtImprimer()" class="btn-add" style="background: #607d8b;">📄 Générer Rapport PDF</button>
 
 
 <div class="label-grid" id="etiqContainer">
