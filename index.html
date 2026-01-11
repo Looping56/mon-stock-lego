@@ -2,20 +2,52 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mon Stock Lego</title>
+
     <link rel="stylesheet" href="style.css">
-    <link rel="scriptheet" href="script.js">
+    <script src="script.js"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* Insérez ici tous les styles que nous avons créés ensemble */
+        /* (Stats bar, Grid, Set cards, Label Design, Media queries pour Print) */
+    </style>
 </head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="script.js"></script>
 <body>
 
 <header>
     <h1>Ma Collection Lego</h1>
 </header>
+
+    <main class="container">
+        <section id="dashboard" class="stats-bar">
+            </section>
+
+        <section class="actions-panel">
+            
+            <div class="buttons-row">
+                <button onclick="exporterExcel()">📊 Excel</button>
+                <button onclick="window.print()">📄 Rapport PDF</button>
+                <button onclick="window.print()" class="btn-add" style="background: #4caf50;">🖨️ Imprimer les étiquettes</button>
+                <button onclick="preparerEtImprimer()" class="btn-add" style="background: #607d8b;">📄 Générer Rapport PDF</button>
+
+                <div id="reader"></div> </div>
+        </section>
+
+        <hr>
+
+        <h2>Ma Collection</h2>
+        <div id="setsGrid" class="grid">
+            </div>
+
+        <hr>
+
+        <h2>Inventaire du Vrac</h2>
+        <div id="piecesTableContainer">
+            </div>
+    </main>
 
 <div class="stats-bar">
     <div class="stat-card">
@@ -49,10 +81,9 @@
     </div>
 </div>
 <div class="search-container">
-    <input type="text" placeholder="Entrez un numéro de set (ex: 75192)...">
-    <button>Ajouter au Stock</button>
-</div>
-
+                <input type="text" id="setSearchInput" placeholder="Numéro de set ou scan...">
+                <button onclick="ajouterNouveauSet()">Ajouter</button>
+            </div>
 <div class="grid">
     <div class="set-card">
         <img src="https://images.rebrickable.com/mg/sets/set-75192-1.jpg" alt="Millennium Falcon">
@@ -133,8 +164,6 @@
     </div>
 </div>
 </body>
-<button onclick="window.print()" class="btn-add" style="background: #4caf50;">🖨️ Imprimer les étiquettes</button>
-<button onclick="preparerEtImprimer()" class="btn-add" style="background: #607d8b;">📄 Générer Rapport PDF</button>
 
 
 <div class="label-grid" id="etiqContainer">
@@ -154,5 +183,59 @@
     let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
     html5QrcodeScanner.render(onScanSuccess);
 </script>
+<input type="file" id="uploadPhoto" accept="image/*" onchange="uploadImage(this)">
+<div id="imagePreview"></div>
 
+<script>
+async function uploadImage(input) {
+    const file = input.files[0];
+    const fileName = `${Date.now()}_${file.name}`; // Nom unique
+
+    // 1. Envoyer l'image vers le stockage Supabase
+    const { data, error } = await supabase.storage
+        .from('photos_lego')
+        .upload(fileName, file);
+
+    if (error) return alert("Erreur d'upload : " + error.message);
+
+    // 2. Récupérer l'URL publique de l'image
+    const { data: urlData } = supabase.storage
+        .from('photos_lego')
+        .getPublicUrl(fileName);
+
+    const publicUrl = urlData.publicUrl;
+
+    // 3. Enregistrer ce lien dans votre table SQL (table sets_possedes)
+    // On suppose que vous avez ajouté une colonne 'photo_perso'
+    await supabase
+        .from('sets_possedes')
+        .update({ photo_perso: publicUrl })
+        .eq('set_num', currentSetNum); 
+
+    alert("Photo enregistrée !");
+}
+</script>
+<script>
+        // 1. CONFIGURATION
+        const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
+            const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
+        const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // 2. FONCTIONS DE CHARGEMENT (Au démarrage)
+        window.onload = async () => {
+            await chargerCollection();
+            await calculerFinance();
+        };
+
+        // 3. LOGIQUE API & SCANNER
+        // (Copiez ici : ajouterNouveauSet, onScanSuccess)
+
+        // 4. LOGIQUE STOCKAGE & VRAC
+        // (Copiez ici : verifierPiecesManquantes, uploadImage)
+
+        // 5. EXPORTS
+        // (Copiez ici : exporterExcel, exporterVersBrickLink)
+    </script>
+</body>
 </html>

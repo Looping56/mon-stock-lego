@@ -186,3 +186,41 @@ async function verifierPiecesManquantes(setNum) {
 
     afficherManquantes(manquantes);
 }
+async function calculerFinance() {
+    const { data: sets, error } = await supabase
+        .from('sets_possedes')
+        .select('prix_achat, prix_actuel_marche');
+
+    if (error) return;
+
+    let totalAchat = 0;
+    let totalMarche = 0;
+
+    sets.forEach(set => {
+        totalAchat += parseFloat(set.prix_achat || 0);
+        totalMarche += parseFloat(set.prix_actuel_marche || 0);
+    });
+
+    const diff = totalMarche - totalAchat;
+    const roi = totalAchat > 0 ? (diff / totalAchat) * 100 : 0;
+
+    // Mise à jour de l'affichage
+    document.getElementById('totalInvesti').innerText = totalAchat.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
+    document.getElementById('valeurMarche').innerText = totalMarche.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
+    document.getElementById('plusValue').innerText = (diff > 0 ? '+' : '') + diff.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
+    document.getElementById('roiPourcent').innerText = `${roi.toFixed(1)}% de rendement`;
+}
+function exporterVersBrickLink(piecesManquantes) {
+    let xml = "<INVENTORY>\n";
+    piecesManquantes.forEach(p => {
+        xml += `  <ITEM>\n    <ITEMTYPE>P</ITEMTYPE>\n    <ITEMID>${p.num}</ITEMID>\n    <COLOR>${p.couleur_id}</COLOR>\n    <MINQTY>${p.manquant}</MINQTY>\n  </ITEM>\n`;
+    });
+    xml += "</INVENTORY>";
+
+    const blob = new Blob([xml], { type: 'text/xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "wanted_list_bricklink.xml";
+    link.click();
+}
