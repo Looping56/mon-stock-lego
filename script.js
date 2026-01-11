@@ -1,131 +1,92 @@
-alert("Script chargé !");
-      // Remplacez par vos vraies clés
-    const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
+// 1. CONFIGURATION (Toujours en premier)
+const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
+const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
 
-    async function ajouterNouveauSet() {
-        const input = document.querySelector('.search-container input');
-        const setNum = input.value; // ex: 75192
+// Utilisation d'un nom différent pour ne pas confondre avec la bibliothèque
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        if (!setNum) return alert("Veuillez entrer un numéro de set");
+alert("Script chargé et connecté !");
 
-        // 1. Appeler Rebrickable
-        const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
-            headers : { 'Authorization': `key ${REBRICKABLE_KEY}`}
-        });
-    
-        if (!response.ok) return alert("Set non trouvé sur Rebrickable");
-        const data = await response.json();
+// 2. FONCTIONS DE CHARGEMENT
+async function chargerStock() {
+    console.log("Tentative de chargement du stock...");
+    const { data, error } = await supabaseClient
+        .from('sets_possedes')
+        .select('*');
 
-        // 2. Sauvegarder dans Supabase
-        const { data: dbData, error } = await supabase
-            .from('sets_possedes')
-            .insert([{ 
-                set_num: data.set_num, 
-                nom: data.name, 
-                image_url: data.set_img_url,
-                nb_pieces: data.num_parts,
-                quantite: 1 
-            }])
-            .select();
-
-        if (error) {
-            alert("Erreur Supabase : " + error.message);
-        } else {
-            // 3. Ajouter visuellement la carte sur la page
-            ajouterCarteAuDom(dbData[0]);
-            input.value = ""; // Vider le champ
-        } 
-    }   
-    function genererEtiquette(pieceNum, nomPiece, emplacementNom) {
-        const container = document.getElementById('etiqContainer');
-    
-        // Créer l'élément de l'étiquette
-        const label = document.createElement('div');
-        label.className = 'label-card';
-        label.innerHTML = `
-            <div class="label-info">
-                <div style="font-weight:bold; font-size:14px;">${pieceNum}</div>
-                <div style="font-size:10px;">${nomPiece}</div>
-                <div style="color:red; font-weight:bold; margin-top:5px;">${emplacementNom}</div>
-            </div>
-            <div id="qrcode-${pieceNum}" class="label-qr"></div>
-        `;
-        container.appendChild(label);
-
-        // Générer le QR Code (on y stocke l'URL de votre appli + la réf)
-        new QRCode(document.getElementById(`qrcode-${pieceNum}`), {
-            text: `https://votre-appli.com/piece?ref=${pieceNum}`,
-            width: 50,
-            height: 50
-        });
+    if (error) console.error("Erreur chargement :", error.message);
+    if (data) {
+        console.log("Données chargées :", data);
+        // Ici tu pourras appeler une fonction pour afficher tes cartes
     }
-    async function onScanSuccess(decodedText) {
-        console.log("Code EAN détecté :", decodedText);
-    
-        // On cherche le set correspondant sur Rebrickable via le paramètre de recherche
-        // Rebrickable accepte les codes barres dans sa recherche de sets
-        const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/?search=${decodedText}`, {
-            headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
-        });
+}
 
-        const data = await response.json();
-
-        if (data.results && data.results.length > 0) {
-            const set = data.results[0]; // On prend le premier résultat trouvé
-            const confirmer = confirm(`Ajouter le set : ${set.name} (${set.set_num}) ?`);
-        
-        if (confirmer) {
-            sauvegarderDansSupabase(set);
-        }
-    }else {
-        alert("Ce code-barre ne correspond à aucun set Lego connu.");
-    }
-    }
-        // Configuration de votre connexion
-            const SUPABASE_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
-            const SUPABASE_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
-            const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-        // Fonction pour charger vos sets depuis la base de données au démarrage
-        async function chargerStock() {
-            const { data, error } = await supabase
-                .from('sets_possedes')
-                .select('*');
-
-        if (data) {
-            console.log("Données chargées :", data);
-            // Ici, on pourrait générer les cartes HTML automatiquement
-        }
-    }
-
+// Lancer le chargement une fois que tout est prêt
+window.onload = () => {
     chargerStock();
-    
-    async function rechercherPiece() {
-        const ref = document.getElementById('searchPiece').value;
-        const container = document.getElementById('resultatRecherche');
-        container.innerHTML = "Recherche en cours...";
+    if(document.getElementById('totalInvesti')) calculerFinance();
+};
 
-    // Requête complexe : on récupère la pièce ET les infos de son emplacement
-    const { data, error } = await supabase
+// 3. AJOUT DE SET
+async function ajouterNouveauSet() {
+    // On essaie de trouver l'input par ID, c'est plus sûr
+    const input = document.getElementById('setSearchInput') || document.querySelector('input');
+    const setNum = input.value; 
+
+    if (!setNum) return alert("Veuillez entrer un numéro de set");
+
+    console.log("Recherche du set :", setNum);
+
+    const response = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
+        headers : { 'Authorization': `key ${REBRICKABLE_KEY}`}
+    });
+
+    if (!response.ok) return alert("Set non trouvé sur Rebrickable");
+    const data = await response.json();
+
+    const { data: dbData, error } = await supabaseClient
+        .from('sets_possedes')
+        .insert([{ 
+            set_num: data.set_num, 
+            nom: data.name, 
+            image_url: data.set_img_url,
+            nb_pieces: data.num_parts,
+            quantite: 1 
+        }])
+        .select();
+
+    if (error) {
+        alert("Erreur Supabase : " + error.message);
+    } else {
+        alert("Set ajouté !");
+        location.reload(); // Recharge la page pour voir le nouveau set
+    } 
+}
+
+// 4. RECHERCHE DE PIÈCE
+async function rechercherPiece() {
+    const input = document.getElementById('searchPiece');
+    if(!input) return;
+    const ref = input.value;
+    const container = document.getElementById('resultatRecherche');
+    
+    container.innerHTML = "Recherche en cours...";
+
+    const { data, error } = await supabaseClient
         .from('pieces_inventaire')
-        .select(`
-            *,
-            emplacements (
-                nom,
-                parent_id
-            )
-        `)
+        .select(`*, emplacements (nom, parent_id)`)
         .eq('piece_num', ref);
 
     if (data && data.length > 0) {
         container.innerHTML = "";
         data.forEach(item => {
             container.innerHTML += `
-                <div class="piece-row" style="background:white; padding:15px; border-radius:10px; display:flex; align-items:center; margin-bottom:10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                <div class="piece-row" style="background:white; padding:15px; border-radius:10px; display:flex; align-items:center; margin-bottom:10px; shadow: 0 2px 5px rgba(0,0,0,0.1);">
                     <img src="${item.image_url}" width="60" style="margin-right:20px;">
                     <div style="flex:1;">
                         <div style="font-weight:bold;">${item.nom_piece} (${item.piece_num})</div>
-                        <div style="color: #d32f2f; font-size:0.9em;">📍 Emplacement : ${item.emplacements.nom}</div>
+                        <div style="color: #d32f2f; font-size:0.9em;">📍 Emplacement : ${item.emplacements?.nom || 'Non défini'}</div>
                         <div style="font-size:0.8em; color:#888;">Couleur : ${item.couleur}</div>
                     </div>
                     <div style="font-size:1.5em; font-weight:bold;">x${item.quantite}</div>
@@ -135,92 +96,6 @@ alert("Script chargé !");
     } else {
         container.innerHTML = "<p>Vous n'avez pas cette pièce en stock.</p>";
     }
-    }
-    async function exporterExcel() {
-        // 1. Récupérer les données de Supabase
-        const { data, error } = await supabase.from('pieces_inventaire').select('*');
-    
-        if (error) return alert("Erreur lors de l'export");
-
-        // 2. Créer le contenu du fichier (En-têtes + Lignes)
-        let csvContent = "Reference;Nom;Couleur;Quantite;Emplacement\n";
-    
-        data.forEach(item => {
-            csvContent += `${item.piece_num};${item.nom_piece};${item.couleur};${item.quantite};${item.emplacement_id}\n`;
-        });
-
-        // 3. Créer le lien de téléchargement
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.setAttribute("href", url);
-            link.setAttribute("download", "mon_stock_lego.csv");
-            link.click();
 }
-async function verifierPiecesManquantes(setNum) {
-    // 1. Récupérer l'inventaire du set (Rebrickable)
-    const resp = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/parts/`, {
-        headers: { 'Authorization': `key ${REBRICKABLE_KEY}` }
-    });
-    const setParts = await resp.json();
 
-    // 2. Récupérer votre stock vrac (Supabase)
-    const { data: monVrac } = await supabase.from('pieces_inventaire').select('*');
-
-    let manquantes = [];
-
-    // 3. Comparaison
-    setParts.results.forEach(p => {
-        const maPiece = monVrac.find(v => v.piece_num === p.part.part_num && v.couleur === p.color.name);
-        const qteEnStock = maPiece ? maPiece.quantite : 0;
-
-        if (qteEnStock < p.quantity) {
-            manquantes.push({
-                num: p.part.part_num,
-                couleur: p.color.name,
-                manquant: p.quantity - qteEnStock,
-                image: p.part.part_img_url
-            });
-        }
-    });
-
-    afficherManquantes(manquantes);
-}
-async function calculerFinance() {
-    const { data: sets, error } = await supabase
-        .from('sets_possedes')
-        .select('prix_achat, prix_actuel_marche');
-
-    if (error) return;
-
-    let totalAchat = 0;
-    let totalMarche = 0;
-
-    sets.forEach(set => {
-        totalAchat += parseFloat(set.prix_achat || 0);
-        totalMarche += parseFloat(set.prix_actuel_marche || 0);
-    });
-
-    const diff = totalMarche - totalAchat;
-    const roi = totalAchat > 0 ? (diff / totalAchat) * 100 : 0;
-
-    // Mise à jour de l'affichage
-    document.getElementById('totalInvesti').innerText = totalAchat.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
-    document.getElementById('valeurMarche').innerText = totalMarche.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
-    document.getElementById('plusValue').innerText = (diff > 0 ? '+' : '') + diff.toLocaleString('fr-FR', {style: 'currency', currency: 'EUR'});
-    document.getElementById('roiPourcent').innerText = `${roi.toFixed(1)}% de rendement`;
-}
-function exporterVersBrickLink(piecesManquantes) {
-    let xml = "<INVENTORY>\n";
-    piecesManquantes.forEach(p => {
-        xml += `  <ITEM>\n    <ITEMTYPE>P</ITEMTYPE>\n    <ITEMID>${p.num}</ITEMID>\n    <COLOR>${p.couleur_id}</COLOR>\n    <MINQTY>${p.manquant}</MINQTY>\n  </ITEM>\n`;
-    });
-    xml += "</INVENTORY>";
-
-    const blob = new Blob([xml], { type: 'text/xml' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "wanted_list_bricklink.xml";
-    link.click();
-}
+// ... Garde tes autres fonctions (exporterExcel, etc.) en remplaçant 'supabase' par 'supabaseClient'
