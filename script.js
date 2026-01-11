@@ -1,4 +1,4 @@
-
+alert("Script chargé !");
       // Remplacez par vos vraies clés
     const REBRICKABLE_KEY = 'c54e689ff20915c537d968ffe15a3745';
 
