@@ -45,13 +45,12 @@ async function chargerCollection() {
                     <img src="${set.image_url}" alt="${set.nom}">
                     <div class="set-info">
                         <div class="set-title">${set.set_num} - ${set.nom}</div>
-                        <div class="qty-control">
-                            <span>Stock: <strong>${set.quantite}</strong></span>
-                            <div>
-                                <button class="qty-btn" onclick="ajusterQuantite('sets_possedes', ${set.id}, -1)">-</button>
-                                <button class="qty-btn" onclick="ajusterQuantite('sets_possedes', ${set.id}, 1)">+</button>
+                            <div class="qty-control">
+                                <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
+                                <span>${set.quantite}</span>
+                                <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
+                                <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
                             </div>
-                        </div>
                     </div>
                 </div>
             `;
@@ -84,33 +83,65 @@ async function ajouterNouveauSet() {
             chargerCollection();
         }
     }
-    // Fonction pour augmenter ou diminuer la quantité d'un set ou d'une pièce
-async function ajusterQuantite(table, id, changement) {
-    console.log(`Ajustement de ${table} ID ${id} de ${changement}`);
+}
+// --- FONCTION SUPPRIMER (Sets ou Pièces) ---
+async function supprimerElement(table, id) {
+    const confirmer = confirm("Voulez-vous vraiment supprimer cet élément ?");
+    if (!confirmer) return;
 
-    // 1. Récupérer la quantité actuelle depuis Supabase
-    const { data, error: fetchError } = await supabaseClient
-        .from(table)
-        .select('quantite')
-        .eq('id', id)
-        .single();
+    const { error } = await clientSupabase.from(table).delete().eq('id', id);
 
-    if (fetchError) return console.error("Erreur fetch:", fetchError.message);
-
-    const nouvelleQte = Math.max(0, (data.quantite || 0) + changement);
-
-    // 2. Mettre à jour la nouvelle quantité
-    const { error: updateError } = await supabaseClient
-        .from(table)
-        .update({ quantite: nouvelleQte })
-        .eq('id', id);
-
-    if (updateError) {
-        alert("Erreur mise à jour : " + updateError.message);
+    if (error) {
+        alert("Erreur lors de la suppression : " + error.message);
     } else {
-        console.log("Quantité mise à jour !");
-        // On rafraîchit l'affichage
-        location.reload(); 
+        // Rafraîchir l'affichage selon la table
+        if (table === 'sets_possedes') await chargerCollection();
+        else await rechercherPiece(); 
     }
 }
+
+// --- RECHERCHE DE PIÈCE (Vrac) ---
+async function rechercherPiece() {
+    const input = document.getElementById('searchPiece');
+    const ref = input.value;
+    const container = document.getElementById('resultatRecherche');
+    
+    if (!ref) return alert("Entrez une référence de pièce !");
+    container.innerHTML = "Recherche en cours...";
+
+// On récupère la pièce ET on joint le nom de l'emplacement
+    const { data, error } = await clientSupabase
+        .from('pieces_inventaire')
+        .select(`*, emplacements(nom)`)
+        .ilike('piece_num', `%${ref}%`); // Recherche flexible
+
+    if (error) return container.innerHTML = "Erreur : " + error.message;
+
+    container.innerHTML = ""; 
+    data.forEach(item => {
+        container.innerHTML += `
+            <div class="piece-row" style="display: flex; align-items: center; background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <img src="${item.image_url}" width="50" style="margin-right: 20px;">
+                <div style="flex: 1;">
+                    <div style="font-weight: bold;">${item.nom_piece || 'Pièce'} (${item.piece_num})</div>
+                    <div style="font-size: 0.8em; color: #666;">
+                        📍 Emplacement : <span style="color: #d32f2f; font-weight: bold;">${item.emplacements?.nom || 'Non classé'}</span>
+                    </div>
+                </div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="modifierQteVrac(${item.id}, -1)">-</button>
+                    <strong>${item.quantite}</strong>
+                    <button class="qty-btn" onclick="modifierQteVrac(${item.id}, 1)">+</button>
+                    <button onclick="supprimerElement('pieces_inventaire', ${item.id})" style="margin-left:15px; background:none; border:none; cursor:pointer; color:#f44336;">🗑️</button>
+                </div>
+            </div>`;
+    });
+}
+
+// --- MODIFIER QTE VRAC ---
+async function modifierQteVrac(id, diff) {
+    const { data } = await clientSupabase.from('pieces_inventaire').select('quantite').eq('id', id).single();
+    const nouvelleQte = Math.max(0, (data.quantite || 0) + diff);
+    await clientSupabase.from('pieces_inventaire').update({ quantite: nouvelleQte }).eq('id', id);
+    await rechercherPiece();
 }

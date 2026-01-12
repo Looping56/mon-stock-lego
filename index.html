@@ -90,14 +90,6 @@
             </div>
             <div class="set-stats">
             </div>
-            <div class="qty-control">
-                <span>Stock: <strong>1</strong></span>
-                <div>
-                    <button onclick="ajusterQuantite('sets_possedes', 0, -1)">-</button>
-                    <span>Quantité</span>
-                    <button onclick="ajusterQuantite('sets_possedes', 0, 1)">+</button>
-                </div>
-            </div>
         </div>
     </div>
     <div class="set-card">
@@ -119,6 +111,8 @@
 <div class="search-container">
     <input type="text" id="searchPiece" placeholder="Chercher une pièce par réf (ex: 3001)...">
     <button onclick="rechercherPiece()">Chercher dans mon Vrac</button>
+    <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
+</div>
 </div>
 
 <div id="resultatRecherche">
@@ -286,6 +280,7 @@ async function uploadImage(input) {
                             <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
                             <span>${set.quantite}</span>
                             <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
+                            <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
                         </div>
                     </div>
                 </div>`;
@@ -295,11 +290,14 @@ async function uploadImage(input) {
     // 4. MODIFIER QUANTITÉ
     async function modifierQte(id, diff) {
         const { data } = await clientSupabase.from('sets_possedes').select('quantite').eq('id', id).single();
-        const nouvelleQte = Math.max(0, data.quantite + diff);
+        const nouvelleQte = Math.max(0, (data.quantite || 0) + diff);
         
         await clientSupabase.from('sets_possedes').update({ quantite: nouvelleQte }).eq('id', id);
+        
+        // Au lieu de recharger la page, on rafraîchit juste la liste
         await chargerCollection();
     }
+    
 </script>
 </body>
 </html>
