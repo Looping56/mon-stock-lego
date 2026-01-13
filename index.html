@@ -275,6 +275,17 @@ async function uploadImage(input) {
         sets.forEach(set => {
             grid.innerHTML += `
                 <div class="set-card">
+                  <div class="zoom-controls">
+                  <span>Taille des photos :
+                  </.span>
+                  <button
+              onclick="changerTaille(0.8)">➖
+                  </button>
+                  <button
+              onclick="changerTaille(1.2)">➕
+                  </button>
+                  </div>
+
                     <img src="${set.image_url}" width="25%">
                     <div class="set-info">
                         <strong>${set.set_num}</strong><br>${set.nom}
