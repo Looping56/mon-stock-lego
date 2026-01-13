@@ -203,3 +203,29 @@
         font-size: 1.5rem;
     }
 }
+.grid {
+    display: grid;
+    /* Cette ligne est magique : elle crée autant de colonnes que possible */
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 10px;
+}
+
+.zoom-controls {
+    margin: 10px 0;
+    padding: 10px;
+    background: #eee;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.zoom-controls button {
+    padding: 5px 15px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 5px;
+}
+
