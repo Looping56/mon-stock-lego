@@ -145,3 +145,24 @@ async function modifierQteVrac(id, diff) {
     await clientSupabase.from('pieces_inventaire').update({ quantite: nouvelleQte }).eq('id', id);
     await rechercherPiece();
 }
+let zoomLevel = 1.0;
+
+function changerTaille(facteur) {
+    zoomLevel *= facteur;
+    // On limite pour ne pas que ce soit trop petit ou trop grand
+    if (zoomLevel < 0.5) zoomLevel = 0.5;
+    if (zoomLevel > 2.0) zoomLevel = 2.0;
+
+    // On applique la nouvelle taille à la grille
+    const grid = document.getElementById('setsGrid');
+    if (grid) {
+        // On modifie la largeur des colonnes de la grille
+        grid.style.gridTemplateColumns = `repeat(auto-fill, minmax(${200 * zoomLevel}px, 1fr))`;
+    }
+    
+    // On peut aussi réduire les images spécifiquement
+    const images = document.querySelectorAll('.set-card img');
+    images.forEach(img => {
+        img.style.maxHeight = `${150 * zoomLevel}px`;
+    });
+}
