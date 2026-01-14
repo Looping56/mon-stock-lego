@@ -228,4 +228,52 @@
     background: white;
     border-radius: 5px;
 }
+/* Grille ultra-compacte */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); /* Vignettes de 120px */
+    gap: 10px;
+    padding: 10px;
+}
+
+/* Style de la vignette */
+.set-card {
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    text-align: center;
+    padding: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+/* Image miniature */
+.set-card img {
+    width: 100%;
+    height: 80px; /* Taille fixe pour l'alignement */
+    object-fit: contain; /* Évite de déformer la photo */
+    margin-bottom: 5px;
+}
+
+/* Texte miniature */
+.set-title {
+    font-size: 0.75rem !important; /* Texte petit */
+    line-height: 1.1;
+    height: 2.2em;
+    overflow: hidden;
+}
+
+/* Contrôles compacts */
+.qty-control {
+    padding: 2px !important;
+    font-size: 0.8rem;
+    background: none;
+}
+
+.qty-btn {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 0.9rem !important;
+}
 
