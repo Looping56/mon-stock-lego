@@ -100,14 +100,58 @@ async function supprimerElement(table, id) {
     }
 }
 
-// --- RECHERCHE DE PIÈCE (Vrac) ---
+// --- RECHERCHER DANS LE VRAC ---
 async function rechercherPiece() {
     const input = document.getElementById('searchPiece');
-    const ref = input.value;
     const container = document.getElementById('resultatRecherche');
+    const ref = input.value;
+
+    if (!ref) return alert("Entrez une référence !");
+    container.innerHTML = "<p>Recherche en cours...</p>";
+
+    // Requête vers Supabase
+    const { data, error } = await clientSupabase
+        .from('pieces_inventaire')
+        .select(`*, emplacements(nom)`)
+        .ilike('piece_num', `%${ref}%`); // Trouve "3001" même si on tape "300"
+
+    if (error) return alert("Erreur : " + error.message);
+
+    // Affichage en vignettes compactes (comme les sets)
+    container.className = "grid"; // On réutilise la grille des sets
+    container.innerHTML = "";
+
+    if (data.length === 0) {
+        container.innerHTML = "<p>Aucune pièce trouvée avec cette référence.</p>";
+        return;
+    }
+
+    data.forEach(item => {
+        container.innerHTML += `
+            <div class="set-card">
+                <div class="qty-badge">${item.quantite}</div>
+                <img src="${item.image_url}" alt="Pièce">
+                <div class="set-title">
+                    <strong>${item.piece_num}</strong><br>
+                    <small style="color:red">${item.emplacements?.nom || 'Sans tiroir'}</small>
+                </div>
+                <div class="qty-control">
+                    <button class="qty-btn" onclick="modifierQteVrac(${item.id}, -1)">-</button>
+                    <button class="qty-btn" onclick="modifierQteVrac(${item.id}, 1)">+</button>
+                    <button onclick="supprimerElement('pieces_inventaire', ${item.id})" class="btn-delete">🗑️</button>
+                </div>
+            </div>`;
+    });
+}
+
+// --- MODIFIER QTE VRAC ---
+async function modifierQteVrac(id, diff) {
+    const { data } = await clientSupabase.from('pieces_inventaire').select('quantite').eq('id', id).single();
+    const nouvelleQte = Math.max(0, (data.quantite || 0) + diff);
     
-    if (!ref) return alert("Entrez une référence de pièce !");
-    container.innerHTML = "Recherche en cours...";
+    const { error } = await clientSupabase.from('pieces_inventaire').update({ quantite: nouvelleQte }).eq('id', id);
+    if (!error) rechercherPiece(); // Rafraîchit la recherche
+}
 
 // On récupère la pièce ET on joint le nom de l'emplacement
     const { data, error } = await clientSupabase
@@ -138,10 +182,22 @@ async function rechercherPiece() {
     });
 }
 
-// --- MODIFIER QTE VRAC ---
-async function modifierQteVrac(id, diff) {
-    const { data } = await clientSupabase.from('pieces_inventaire').select('quantite').eq('id', id).single();
-    const nouvelleQte = Math.max(0, (data.quantite || 0) + diff);
-    await clientSupabase.from('pieces_inventaire').update({ quantite: nouvelleQte }).eq('id', id);
-    await rechercherPiece();
+
+
+async function ajouterPieceVrac() {
+    const ref = document.getElementById('searchPiece').value;
+    const resp = await fetch(`https://rebrickable.com/api/v3/lego/parts/${ref}/`, {
+        headers: { 'Authorization': `key ${REBRICK_KEY}` }
+    });
+    const data = await resp.json();
+
+    if (data.part_num) {
+        await clientSupabase.from('pieces_inventaire').insert([{
+            piece_num: data.part_num,
+            nom_piece: data.name,
+            image_url: data.part_img_url,
+            quantite: 1
+        }]);
+        rechercherPiece();
+    }
 }

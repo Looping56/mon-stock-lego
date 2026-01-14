@@ -298,5 +298,22 @@ async function uploadImage(input) {
     }
     
 </script>
+        async function ajouterPieceVrac() {
+            const ref = document.getElementById('searchPiece').value;
+            const resp = await fetch(`https://rebrickable.com/api/v3/lego/parts/${ref}/`, {
+                headers: { 'Authorization': `key ${REBRICK_KEY}` }
+            });
+            const data = await resp.json();
+
+            if (data.part_num) {
+                await clientSupabase.from('pieces_inventaire').insert([{
+                    piece_num: data.part_num,
+                    nom_piece: data.name,
+                    image_url: data.part_img_url,
+                    quantite: 1
+                }]);
+                rechercherPiece();
+            }
+}
 </body>
 </html>
