@@ -274,14 +274,14 @@ async function uploadImage(input) {
         sets.forEach(set => {
             grid.innerHTML += `
                     <div class="set-card">
+                        <div class="qty-badge">${set.quantite}</div>
                         <img src="${set.image_url}" alt="${set.nom}">
                         <div class="set-title"><strong>${set.set_num}</strong></div>
-                        <div class="qty-control">
-                                <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
-                                <strong>${set.quantite}</strong>
-                                <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
-                            </div>
-                            <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete" style="font-size: 0.8rem;">🗑️</button>
+                        <div class="qty-control" style="justify-content: center; gap: 5px;">
+                            <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
+                            <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
+                            <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete">🗑️</button>
+                        </div>
                     </div>`;
         });
     }
