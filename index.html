@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Mon Stock Lego</title>
 
     <link rel="stylesheet" href="style.css">
@@ -40,14 +39,6 @@
         <h2>Ma Collection</h2>
         <div id="setsGrid" class="grid">
             </div>
-              <div class="zoom-controls">
-               <span>Taille des photos :</span>
-               <button onclick="changerTaille(0.8)">➖
-               </button>
-               <button
-onclick="changerTaille(1.2)">➕</button>
-               </div>
-
 
         <hr>
 
@@ -111,7 +102,7 @@ onclick="changerTaille(1.2)">➕</button>
             <span>📅 12/2025</span>
         </div>
         <div class="progress-container" style="background: #eee; height: 10px; border-radius: 5px;">
-            <div class="progress-bar" style="width: 0%; background: #4caf50; height: 100%; border-radius: 5px;"></div>
+            <div class="progress-bar" style="width: 85%; background: #4caf50; height: 100%; border-radius: 5px;"></div>
         </div>
         <p style="font-size: 0.75em; text-align: center;">0% des pièces en stock vrac</p>
     </div>
@@ -128,7 +119,7 @@ onclick="changerTaille(1.2)">➕</button>
     </div>
 
 <h2 style="margin-top:40px;">Gestion du Vrac (Pièces détachées)</h2>
-<table style="width:50%; background:white; border-collapse: collapse; border-radius: 8px; overflow:hidden;">
+<table style="width:100%; background:white; border-collapse: collapse; border-radius: 8px; overflow:hidden;">
     <thead style="background:#333; color:white;">
         <tr>
             <th style="padding:10px;">Image</th>
@@ -282,29 +273,16 @@ async function uploadImage(input) {
         grid.innerHTML = ""; // Vide la grille
         sets.forEach(set => {
             grid.innerHTML += `
-                <div class="set-card">
-                  <div class="zoom-controls">
-                  <span>Taille des photos :
-                  </.span>
-                  <button
-              onclick="changerTaille(0.8)">➖
-                  </button>
-                  <button
-              onclick="changerTaille(1.2)">➕
-                  </button>
-                  </div>
-
-                    <img src="${set.image_url}" width="25%">
-                    <div class="set-info">
-                        <strong>${set.set_num}</strong><br>${set.nom}
+                    <div class="set-card">
+                        <img src="${set.image_url}" alt="${set.nom}">
+                        <div class="set-title"><strong>${set.set_num}</strong></div>
                         <div class="qty-control">
-                            <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
-                            <span>${set.quantite}</span>
-                            <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
-                            <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
-                        </div>
-                    </div>
-                </div>`;
+                                <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
+                                <strong>${set.quantite}</strong>
+                                <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
+                            </div>
+                            <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete" style="font-size: 0.8rem;">🗑️</button>
+                    </div>`;
         });
     }
 
@@ -321,7 +299,4 @@ async function uploadImage(input) {
     
 </script>
 </body>
-
 </html>
-
-

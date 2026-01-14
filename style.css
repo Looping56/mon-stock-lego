@@ -170,64 +170,6 @@
     transform: scale(1.2);
     color: #d32f2f;
 }
-/* --- ADAPTATION MOBILE --- */
-@media (max-width: 600px) {
-    /* On empile les éléments au lieu de les mettre côte à côte */
-    .qty-control {
-        flex-wrap: wrap; /* Permet de revenir à la ligne si pas assez de place */
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .piece-row {
-        flex-direction: column; /* Image en haut, texte au milieu, boutons en bas */
-        text-align: center;
-        padding: 10px;
-    }
-
-    .piece-row img {
-        margin-right: 0 !important;
-        margin-bottom: 10px;
-    }
-
-    /* Agrandir les boutons pour les gros doigts ! */
-    .qty-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 1.5em;
-    }
-
-    /* La poubelle de suppression plus facile à toucher */
-    .btn-delete {
-        padding: 10px;
-        font-size: 1.5rem;
-    }
-}
-.grid {
-    display: grid;
-    /* Cette ligne est magique : elle crée autant de colonnes que possible */
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
-    padding: 10px;
-}
-
-.zoom-controls {
-    margin: 10px 0;
-    padding: 10px;
-    background: #eee;
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.zoom-controls button {
-    padding: 5px 15px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    background: white;
-    border-radius: 5px;
-}
 /* Grille ultra-compacte */
 .grid {
     display: grid;
@@ -276,4 +218,3 @@
     height: 24px !important;
     font-size: 0.9rem !important;
 }
-
