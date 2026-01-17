@@ -2,318 +2,93 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mon Stock Lego</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Lego Master Manager</title>
 
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
+    <style>
+        :root {
+            --primary: #2196f3;
+            --danger: #f44336;
+            --bg: #f4f7f6;
+        }
+
+        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        header { background: #333; color: white; padding: 15px; text-align: center; }
+        .container { padding: 15px; max-width: 1200px; margin: auto; }
+
+        /* Dashboard */
+        .stats-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
+        .stat-card { background: white; padding: 15px; border-radius: 10px; min-width: 150px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
+        .stat-card h3 { margin: 0; font-size: 0.8rem; color: #666; }
+        .stat-card p { margin: 5px 0; font-size: 1.2rem; font-weight: bold; }
+
+        /* Grilles Vignettes */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-top: 15px; }
+        
+        .set-card { 
+            background: white; border-radius: 10px; padding: 8px; position: relative;
+            text-align: center; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+
+        .set-card img { width: 100%; height: 80px; object-fit: contain; margin-bottom: 5px; }
+        .set-title { font-size: 0.7rem; font-weight: bold; height: 2.2em; overflow: hidden; line-height: 1.1; }
+
+        /* Badges et Contrôles */
+        .qty-badge { 
+            position: absolute; top: -5px; right: -5px; background: var(--primary);
+            color: white; border-radius: 50%; width: 22px; height: 22px;
+            font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold;
+        }
+
+        .qty-control { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 8px; }
+        .qty-btn { width: 28px; height: 28px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; }
+        .btn-add { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; }
+        .btn-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; margin-top: 5px; }
+
+        /* Formulaires */
+        .search-container { display: flex; gap: 5px; margin-bottom: 20px; }
+        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+
+        @media (max-width: 600px) {
+            .grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+            .qty-btn { width: 35px; height: 35px; } /* Plus gros pour mobile */
+        }
+    </style>
 </head>
 <body>
 
-<header>
-    <h1>Ma Collection Lego</h1>
-</header>
+<header><h1>🧱 Ma Collection Lego</h1></header>
 
-    <main class="container">
-        <section id="dashboard" class="stats-bar">
-            </section>
+<div class="container">
+    <section class="stats-bar">
+        <div class="stat-card"><h3>Investi</h3><p id="totalInvesti">0 €</p></div>
+        <div class="stat-card" style="border-left-color: #4caf50;"><h3>Valeur</h3><p id="valeurMarche">0 €</p></div>
+        <div class="stat-card" style="border-left-color: #ff9800;"><h3>Vrac</h3><p id="totalPieces">0</p></div>
+    </section>
 
-        <section class="actions-panel">
-            
-            <div class="buttons-row">
-                <button onclick="exporterExcel()">📊 Excel</button>
-                <button onclick="window.print()">📄 Rapport PDF</button>
-                <button onclick="window.print()" class="btn-add" style="background: #4caf50;">🖨️ Imprimer les étiquettes</button>
-                <button onclick="preparerEtImprimer()" class="btn-add" style="background: #607d8b;">📄 Générer Rapport PDF</button>
+    <h2>📦 Mes Sets</h2>
+    <div class="search-container">
+        <input type="text" id="setSearchInput" placeholder="Numéro de set (ex: 75192)">
+        <button class="btn-add" style="width: 80px;" onclick="ajouterNouveauSet()">Ajouter</button>
+    </div>
+    <div id="setsGrid" class="grid"></div>
 
-                <div id="reader"></div> </div>
-        </section>
+    <hr style="margin: 40px 0;">
 
-        <hr>
-
-        <h2>Ma Collection</h2>
-        <div id="setsGrid" class="grid">
-            </div>
-
-        <hr>
-
-        <h2>Inventaire du Vrac</h2>
-        <div id="piecesTableContainer">
-            </div>
-    </main>
-
-<div class="stats-bar">
-    <div class="stat-card">
-        <h3>Total Sets</h3>
-        <p></p>
+    <h2>🏗️ Inventaire du Vrac</h2>
+    <div class="search-container">
+        <input type="text" id="searchPiece" placeholder="Réf pièce (ex: 3001)">
+        <button class="btn-add" style="width: 80px; background: #666;" onclick="rechercherPiece()">Chercher</button>
+        <button class="btn-add" style="width: 50px; background: #4caf50;" onclick="ajouterPieceVrac()">+</button>
     </div>
-    <div class="stats-bar">
-    <div class="stat-card" style="border-left-color: #2196f3;">
-        <h3>Investissement Total</h3>
-        <p id="totalInvesti">0,00 €</p>
-        <span class="sub-text">Somme des prix d'achat</span>
-    </div>
-    <div class="stat-card" style="border-left-color: #4caf50;">
-        <h3>Valeur de Marché</h3>
-        <p id="valeurMarche">0,00 €</p>
-        <span class="sub-text">Estimation actuelle</span>
-    </div>
-    <div class="stat-card" style="border-left-color: #ffc107;">
-        <h3>Plus-value</h3>
-        <p id="plusValue">+0,00 €</p>
-        <span id="roiPourcent" class="sub-text">0%</span>
-    </div>
-</div>
-    <div class="stat-card" style="border-left-color: #4caf50;">
-        <h3>Pièces en Stock</h3>
-        <p></p>
-    </div>
-    <div class="stat-card" style="border-left-color: #ff9800;">
-        <h3>Minifigures</h3>
-        <p></p>
-    </div>
-</div>
-<div class="search-container">
-                <input type="text" id="setSearchInput" placeholder="Numéro de set ou scan...">
-                <button onclick="ajouterNouveauSet()">Ajouter</button>
-            </div>
-<div class="grid">
-    <div class="set-card">
-        <img src="" alt="">
-        <div class="set-info">
-            <div class="set-title">
-            </div>
-            <div class="set-stats">
-            </div>
-        </div>
-    </div>
-    <div class="set-card">
-    <div class="badge-etat"></div> <img src="set_image.jpg">
-    <div class="set-info">
-        <div class="set-title">
-        </div>
-        <div class="finance-info" style="display: flex; justify-content: space-between; font-size: 0.85em; margin: 10px 0;">
-            <span>💰 Achat: <strong></strong></span>
-            <span>📅 12/2025</span>
-        </div>
-        <div class="progress-container" style="background: #eee; height: 10px; border-radius: 5px;">
-            <div class="progress-bar" style="width: 85%; background: #4caf50; height: 100%; border-radius: 5px;"></div>
-        </div>
-        <p style="font-size: 0.75em; text-align: center;">0% des pièces en stock vrac</p>
-    </div>
-</div>
-</div>
-<div class="search-container">
-    <input type="text" id="searchPiece" placeholder="Chercher une pièce par réf (ex: 3001)...">
-    <button onclick="rechercherPiece()">Chercher dans mon Vrac</button>
-    <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
-</div>
+    <div id="resultatRecherche" class="grid"></div>
 </div>
 
-<div id="resultatRecherche">
-    </div>
-
-<h2 style="margin-top:40px;">Gestion du Vrac (Pièces détachées)</h2>
-<table style="width:100%; background:white; border-collapse: collapse; border-radius: 8px; overflow:hidden;">
-    <thead style="background:#333; color:white;">
-        <tr>
-            <th style="padding:10px;">Image</th>
-            <th>Réf</th>
-            <th>Couleur</th>
-            <th>Localisation</th>
-            <th>Stock</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr style="border-bottom: 1px solid #eee; text-align:center;">
-            <td><img src="" width="40"></td>
-            <td></td>
-            <td></td>
-            <td style="color: #d32f2f; font-weight:bold;"></td>
-            <td>
-                <button onclick="qty-btn">-</button>
-                <strong></strong>
-                <button onclick="qty-btn">+</button>
-                <button onclick="supprimerElement('sets_possedes', ${set.id})" style="margin-left:10px; background:none; border:none; cursor:pointer;">🗑️</button>
-            </td>
-        </tr>
-        </tbody>
-</table>
-<div class="piece-row" style="display: flex; align-items: center; background: white; margin-bottom: 10px; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-    <img src="" width="50" style="margin-right: 20px;">
-    
-    <div style="flex: 1;">
-        <div style="font-weight: bold;"></div>
-        <div style="font-size: 0.8em; color: #666;">
-            📍 Étagère A > Meuble Rouge > <span style="color: #d32f2f; font-weight: bold;"></span>
-        </div>
-    </div>
-
-    <div class="qty-control">
-        <button class="qty-btn">-</button>
-        <strong></strong>
-        <button class="qty-btn">+</button>
-    </div>
-</div>
-</body>
-
-
-<div class="label-grid" id="etiqContainer">
-    </div>
-    <div id="reader" style="width: 300px; margin: 20px auto; border-radius: 10px; overflow: hidden;"></div>
-
-<script>
-    function onScanSuccess(decodedText, decodedResult) {
-        // decodedText contient le code barre (EAN) de la boîte
-        alert("Code détecté : " + decodedText);
-        
-        // Ici, on peut chercher le set correspondant. 
-        // Note : Rebrickable permet de chercher par code EAN !
-        chercherSetParCodeBarre(decodedText);
-    }
-
-    let html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: 250 });
-    html5QrcodeScanner.render(onScanSuccess);
-</script>
-<input type="file" id="uploadPhoto" accept="image/*" onchange="uploadImage(this)">
-<div id="imagePreview"></div>
-
-<script>
-async function uploadImage(input) {
-    const file = input.files[0];
-    const fileName = `${Date.now()}_${file.name}`; // Nom unique
-
-    // 1. Envoyer l'image vers le stockage Supabase
-    const { data, error } = await supabase.storage
-        .from('photos_lego')
-        .upload(fileName, file);
-
-    if (error) return alert("Erreur d'upload : " + error.message);
-
-    // 2. Récupérer l'URL publique de l'image
-    const { data: urlData } = supabase.storage
-        .from('photos_lego')
-        .getPublicUrl(fileName);
-
-    const publicUrl = urlData.publicUrl;
-
-    // 3. Enregistrer ce lien dans votre table SQL (table sets_possedes)
-    // On suppose que vous avez ajouté une colonne 'photo_perso'
-    await supabase
-        .from('sets_possedes')
-        .update({ photo_perso: publicUrl })
-        .eq('set_num', currentSetNum); 
-
-    alert("Photo enregistrée !");
-}
-</script>
-<script>
-    // 1. CONFIGURATION
-    const SB_URL = 'https://orofxwykbdtwbissglkj.supabase.co';
-    const SB_KEY = 'sb_publishable_f13beKBpC1m7-heNv2SOxA_47n1nuLP';
-    const REBRICK_KEY = 'c54e689ff20915c537d968ffe15a3745';
-
-    // On utilise 'clientSupabase' pour éviter le conflit avec la bibliothèque 'supabase'
-    const clientSupabase = supabase.createClient(SB_URL, SB_KEY);
-
-    window.onload = async () => {
-        console.log("Système prêt !");
-        alert("Connexion établie !"); // Si cette alerte apparaît, la base de données est liée
-        await chargerCollection();
-    };
-
-    // 2. FONCTION AJOUTER (CORRIGÉE)
-    async function ajouterNouveauSet() {
-        const input = document.getElementById('setSearchInput');
-        const setNum = input.value;
-        if (!setNum) return alert("Indiquez un numéro !");
-
-        try {
-            // Recherche sur Rebrickable
-            const resp = await fetch(`https://rebrickable.com/api/v3/lego/sets/${setNum}/`, {
-                headers: { 'Authorization': `key ${REBRICK_KEY}` }
-            });
-            const data = await resp.json();
-
-            if (!data.set_num) return alert("Set introuvable sur Rebrickable");
-
-            // Insertion dans Supabase
-            const { error } = await clientSupabase.from('sets_possedes').insert([{
-                set_num: data.set_num,
-                nom: data.name,
-                image_url: data.set_img_url,
-                quantite: 1
-            }]);
-
-            if (error) throw error;
-
-            alert("Set ajouté !");
-            input.value = "";
-            await chargerCollection(); // Rafraîchit la liste sans recharger la page
-        } catch (err) {
-            console.error(err);
-            alert("Erreur : " + err.message);
-        }
-    }
-
-    // 3. CHARGER LA COLLECTION
-    async function chargerCollection() {
-        const grid = document.getElementById('setsGrid');
-        if (!grid) return;
-
-        const { data: sets, error } = await clientSupabase.from('sets_possedes').select('*');
-        
-        if (error) return console.log("Erreur de chargement");
-
-        grid.innerHTML = ""; // Vide la grille
-        sets.forEach(set => {
-            grid.innerHTML += `
-                    <div class="set-card">
-                        <div class="qty-badge">${set.quantite}</div>
-                        <img src="${set.image_url}" alt="${set.nom}">
-                        <div class="set-title"><strong>${set.set_num}</strong></div>
-                        <div class="qty-control" style="justify-content: center; gap: 5px;">
-                            <button class="qty-btn" onclick="modifierQte(${set.id}, -1)">-</button>
-                            <button class="qty-btn" onclick="modifierQte(${set.id}, 1)">+</button>
-                            <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete">🗑️</button>
-                        </div>
-                    </div>`;
-        });
-    }
-
-    // 4. MODIFIER QUANTITÉ
-    async function modifierQte(id, diff) {
-        const { data } = await clientSupabase.from('sets_possedes').select('quantite').eq('id', id).single();
-        const nouvelleQte = Math.max(0, (data.quantite || 0) + diff);
-        
-        await clientSupabase.from('sets_possedes').update({ quantite: nouvelleQte }).eq('id', id);
-        
-        // Au lieu de recharger la page, on rafraîchit juste la liste
-        await chargerCollection();
-    }
-    
-</script>
-        async function ajouterPieceVrac() {
-            const ref = document.getElementById('searchPiece').value;
-            const resp = await fetch(`https://rebrickable.com/api/v3/lego/parts/${ref}/`, {
-                headers: { 'Authorization': `key ${REBRICK_KEY}` }
-            });
-            const data = await resp.json();
-
-            if (data.part_num) {
-                await clientSupabase.from('pieces_inventaire').insert([{
-                    piece_num: data.part_num,
-                    nom_piece: data.name,
-                    image_url: data.part_img_url,
-                    quantite: 1
-                }]);
-                rechercherPiece();
-            }
-}
+<script src="script.js"></script>
 </body>
 </html>
