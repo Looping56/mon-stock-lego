@@ -29,12 +29,20 @@ async function chargerCollection() {
             <div class="set-card">
                 <div class="qty-badge">${set.quantite}</div>
                 <img src="${set.image_url}" alt="Set">
-                <div class="set-title">${set.set_num}<br>${set.nom}</div>
+                <div class="set-title"><strong>${set.set_num}</strong><br>${set.nom}</div>
+                <div class="file-actions" style="margin: 10px 0;">
+                    <span class="file-link" onclick="ouvrirNotice('${set.set_num}')" title="Notice PDF">
+                        📄<span id="status-pdf-${set.id}" class="status-dot">❌</span>
+                    </span>
+                    <span class="file-link" onclick="recupererInventaire('${set.set_num}')" title="Inventaire XML">
+                        🧱<span id="status-xml-${set.id}" class="status-dot">❌</span>
+                    </span>
+                </div>
                 <div class="qty-control">
                     <button class="qty-btn" onclick="modifierQte('sets_possedes', ${set.id}, -1)">-</button>
                     <button class="qty-btn" onclick="modifierQte('sets_possedes', ${set.id}, 1)">+</button>
+                    <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete">🗑️</button>
                 </div>
-                <button onclick="supprimerElement('sets_possedes', ${set.id})" class="btn-delete">🗑️</button>
             </div>`;
     });
 }
@@ -142,6 +150,62 @@ async function calculerFinance() {
     const { data } = await clientSupabase.from('sets_possedes').select('quantite');
     if (data) {
         const total = data.reduce((sum, item) => sum + item.quantite, 0);
+        document.getElementById('totalSets').innerText = data.length;
         // On peut ajouter ici les calculs de prix si tu as les colonnes prix_achat
     }
+}
+// --- FONCTION POUR LA NOTICE (Local d'abord, sinon Web) ---
+function ouvrirNotice(setNum) {
+    const cheminLocal = `notices/${setNum}.pdf`;
+    
+    // On tente d'ouvrir le fichier local dans un nouvel onglet
+    const win = window.open(cheminLocal, '_blank');
+    
+    // Si l'onglet se ferme ou affiche une erreur (certains navigateurs le permettent), 
+    // ou plus simplement, on propose le lien de secours après 1 seconde
+    setTimeout(() => {
+        if (confirm("Si la notice locale ne s'est pas ouverte, voulez-vous la chercher sur le serveur LEGO ?")) {
+            window.open(`https://www.lego.com/fr-fr/service/buildinginstructions/${setNum}`, '_blank');
+        }
+    }, 1000);
+}
+
+// --- FONCTION POUR L'INVENTAIRE XML ---
+async function recupererInventaire(setNum) {
+    const cheminLocal = `inventaires/${setNum}.xml`;
+    
+    try {
+        const response = await fetch(cheminLocal);
+        if (response.ok) {
+            alert("Inventaire local trouvé ! Ouverture du fichier...");
+            window.open(cheminLocal, '_blank');
+        } else {
+            throw new Error("Non trouvé");
+        }
+    } catch (e) {
+        if (confirm("Inventaire local introuvable. Télécharger depuis Rebrickable ?")) {
+            exporterXML(setNum); // Utilise la fonction de téléchargement qu'on a créée avant
+        }
+    }
+}
+// Fonction pour vérifier si un fichier existe localement
+async function verifierFichierLocal(path) {
+    try {
+        const response = await fetch(path, { method: 'HEAD' });
+        return response.ok; // Renvoie true si le fichier est trouvé (200 OK)
+    } catch (e) {
+        return false; // Renvoie false si erreur (404 ou autre)
+    }
+}
+
+// Mise à jour de l'affichage des vignettes
+async function mettreAJourStatutFichiers(setNum, id) {
+    const aNotice = await verifierFichierLocal(`notices/${setNum}.pdf`);
+    const aXml = await verifierFichierLocal(`inventaires/${setNum}.xml`);
+
+    const noticeEl = document.getElementById(`status-pdf-${id}`);
+    const xmlEl = document.getElementById(`status-xml-${id}`);
+
+    if (noticeEl && aNotice) noticeEl.innerText = "✅";
+    if (xmlEl && aXml) xmlEl.innerText = "✅";
 }

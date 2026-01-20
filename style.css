@@ -246,3 +246,21 @@
     font-weight: bold;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
+.file-link {
+    cursor: pointer;
+    font-size: 1.2rem;
+    position: relative;
+    display: inline-block;
+    margin: 0 8px;
+    text-decoration: none;
+}
+
+.status-dot {
+    position: absolute;
+    bottom: -2px;
+    right: -5px;
+    font-size: 0.7rem;
+}
+
+/* Animation de chargement si besoin */
+.checking { opacity: 0.5; }
