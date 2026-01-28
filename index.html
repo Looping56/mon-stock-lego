@@ -3,88 +3,95 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Lego Master Manager</title>
-
+    <title>Lego Master Manager Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-
     <style>
-        :root {
-            --primary: #2196f3;
-            --danger: #f44336;
-            --bg: #f4f7f6;
-        }
-
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 0; }
-        header { background: #333; color: white; padding: 15px; text-align: center; }
+        :root { --primary: #2196f3; --danger: #f44336; --success: #4caf50; --bg: #f4f7f6; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; }
+        header { background: #333; color: white; padding: 15px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.2); }
         .container { padding: 15px; max-width: 1200px; margin: auto; }
 
-        /* Dashboard */
+        /* Stats & Dashboard */
         .stats-bar { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 20px; }
-        .stat-card { background: white; padding: 15px; border-radius: 10px; min-width: 150px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
-        .stat-card h3 { margin: 0; font-size: 0.8rem; color: #666; }
-        .stat-card p { margin: 5px 0; font-size: 1.2rem; font-weight: bold; }
+        .stat-card { background: white; padding: 15px; border-radius: 10px; min-width: 140px; flex: 1; box-shadow: 0 2px 5px rgba(0,0,0,0.1); border-left: 5px solid var(--primary); }
+        .stat-card h3 { margin: 0; font-size: 0.75rem; color: #666; text-transform: uppercase; }
+        .stat-card p { margin: 5px 0; font-size: 1.1rem; font-weight: bold; }
 
-        /* Grilles Vignettes */
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; margin-top: 15px; }
-        
+        /* Grilles & Vignettes */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 15px; }
         .set-card { 
-            background: white; border-radius: 10px; padding: 8px; position: relative;
-            text-align: center; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            background: white; border-radius: 12px; padding: 10px; position: relative;
+            text-align: center; border: 1px solid #ddd; transition: transform 0.2s;
             display: flex; flex-direction: column; justify-content: space-between;
+            <div class="file-actions">
+                <span class="file-link" onclick="ouvrirNotice('${set.set_num}')" title="Notice PDF">📄</span>
+    
+                <label class="file-link" title="Prendre une photo">
+                    📷
+                    <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this, '${set.id}')">
+                </label>
+
+                <span class="file-link" onclick="resetImage('${set.id}', '${set.set_num}')" title="Remettre l'image officielle">🔄</span>
+    
+                <span class="file-link" onclick="exporterInventaireComplet('${set.set_num}')" title="Analyse">📊</span>
+            </div>
         }
+        .set-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .set-card img { width: 100%; height: 90px; object-fit: contain; margin-bottom: 8px; }
+        .set-title { font-size: 0.75rem; font-weight: bold; height: 2.4em; overflow: hidden; margin-bottom: 8px; }
 
-        .set-card img { width: 100%; height: 80px; object-fit: contain; margin-bottom: 5px; }
-        .set-title { font-size: 0.7rem; font-weight: bold; height: 2.2em; overflow: hidden; line-height: 1.1; }
-
-        /* Badges et Contrôles */
+        /* Badges & Alertes */
         .qty-badge { 
             position: absolute; top: -5px; right: -5px; background: var(--primary);
-            color: white; border-radius: 50%; width: 22px; height: 22px;
-            font-size: 0.7rem; display: flex; align-items: center; justify-content: center; font-weight: bold;
+            color: white; border-radius: 50%; width: 24px; height: 24px;
+            font-size: 0.75rem; display: flex; align-items: center; justify-content: center; font-weight: bold; z-index: 2;
         }
+        .stock-critique { border: 2px solid var(--danger) !important; background: #fff5f5; }
+        .stock-critique .qty-badge { background: var(--danger); animation: pulse 2s infinite; }
+        @keyframes pulse { 0% {scale: 1;} 50% {scale: 1.15;} 100% {scale: 1;} }
 
-        .qty-control { display: flex; justify-content: center; align-items: center; gap: 5px; margin-top: 8px; }
-        .qty-btn { width: 28px; height: 28px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; font-size: 1rem; }
-        .btn-add { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; width: 100%; }
-        .btn-delete { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 1rem; margin-top: 5px; }
+        /* Actions & Boutons */
+        .file-actions { display: flex; justify-content: center; gap: 8px; margin: 8px 0; padding: 5px; background: #f9f9f9; border-radius: 8px; }
+        .file-link { cursor: pointer; font-size: 1.1rem; position: relative; filter: grayscale(0.5); }
+        .file-link:hover { filter: grayscale(0); transform: scale(1.2); }
+        .status-dot { position: absolute; bottom: -4px; right: -6px; font-size: 0.65rem; }
+        
+        .qty-control { display: flex; justify-content: center; align-items: center; gap: 8px; }
+        .qty-btn { width: 30px; height: 30px; border: none; border-radius: 6px; cursor: pointer; background: #eee; font-weight: bold; }
+        .qty-btn:active { background: #ddd; }
+        
+        .search-box { display: flex; gap: 8px; margin-bottom: 25px; }
+        input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 8px; outline: none; }
+        .btn-main { background: var(--primary); color: white; border: none; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; }
 
-        /* Formulaires */
-        .search-container { display: flex; gap: 5px; margin-bottom: 20px; }
-        input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-
-        @media (max-width: 600px) {
-            .grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-            .qty-btn { width: 35px; height: 35px; } /* Plus gros pour mobile */
-        }
+        @media (max-width: 600px) { .grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); } }
     </style>
 </head>
 <body>
 
-<header><h1>🧱 Ma Collection Lego</h1></header>
+<header><h1>🧱 Lego Master Manager Pro</h1></header>
 
 <div class="container">
     <section class="stats-bar">
-        <div class="stat-card"><h3>Sets Possédés</h3><p id="totalSets">0</p></div>
-        <div class="stat-card" style="border-left-color: #4caf50;"><h3>Valeur</h3><p id="valeurMarche">0 €</p></div>
-        <div class="stat-card" style="border-left-color: #ff9800;"><h3>Vrac</h3><p id="totalPieces">0</p></div>
+        <div class="stat-card"><h3>Sets</h3><p id="totalSets">0</p></div>
+        <div class="stat-card" style="border-left-color: var(--success);"><h3>Vrac Total</h3><p id="totalPieces">0</p></div>
+        <div class="stat-card" style="border-left-color: #ff9800;"><h3>Alertes</h3><p id="alerteVrac">0</p></div>
     </section>
 
-    <h2>📦 Mes Sets</h2>
-    <div class="search-container">
-        <input type="text" id="setSearchInput" placeholder="Numéro de set (ex: 75192)">
-        <button class="btn-add" style="width: 80px;" onclick="ajouterNouveauSet()">Ajouter</button>
+    <h2>📦 Mes Collections (Sets)</h2>
+    <div class="search-box">
+        <input type="text" id="setSearchInput" placeholder="Numéro, nom ou année du set...">
+        <button class="btn-main" onclick="rechercherSetAvance()">Ajouter</button>
     </div>
     <div id="setsGrid" class="grid"></div>
 
-    <hr style="margin: 40px 0;">
+    <hr style="margin: 40px 0; opacity: 0.2;">
 
     <h2>🏗️ Inventaire du Vrac</h2>
-    <div class="search-container">
+    <div class="search-box">
         <input type="text" id="searchPiece" placeholder="Réf pièce (ex: 3001)">
-        <button class="btn-add" style="width: 80px; background: #666;" onclick="rechercherPiece()">Chercher</button>
-        <button class="btn-add" style="width: 50px; background: #4caf50;" onclick="ajouterPieceVrac()">+</button>
+        <button class="btn-main" style="background: #666;" onclick="rechercherPiece()">Chercher</button>
+        <button class="btn-main" style="background: var(--success);" onclick="ajouterPieceVrac()">+</button>
     </div>
     <div id="resultatRecherche" class="grid"></div>
 </div>

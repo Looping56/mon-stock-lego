@@ -229,6 +229,10 @@
 .set-card {
     position: relative; /* Pour placer le badge par rapport à la carte */
 }
+.set-card img {
+    object-fit: cover; /* Recadre joliment si la photo n'est pas carrée */
+    border-radius: 5px;
+}
 
 .qty-badge {
     position: absolute;
@@ -264,3 +268,8 @@
 
 /* Animation de chargement si besoin */
 .checking { opacity: 0.5; }
+label.file-link {
+    display: inline-block;
+    margin: 0 8px;
+    vertical-align: middle;
+}
