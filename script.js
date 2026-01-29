@@ -35,6 +35,16 @@ async function chargerCollection() {
                     <span class="file-link" onclick="ouvrirNotice('${set.set_num}')" title="Notice PDF">📄<span id="pdf-${set.id}" class="status-dot">❌</span></span>
                     <span class="file-link" onclick="exporterInventaireComplet('${set.set_num}')" title="Analyse & Excel">📊</span>
                     <span class="file-link" onclick="genererListeAchatBrickLink('${set.set_num}')" title="Acheter Manquants">🛒</span>
+                    <span class="file-link" onclick="ouvrirNotice('${set.set_num}')" title="Notice PDF">📄</span>
+    
+                    <label class="file-link" title="Prendre une photo">
+                        📷
+                        <input type="file" accept="image/*" style="display:none" onchange="uploadPhoto(this, '${set.id}')">
+                    </label>
+
+                    <span class="file-link" onclick="resetImage('${set.id}', '${set.set_num}')" title="Remettre l'image officielle">🔄</span>
+    
+                    <span class="file-link" onclick="exporterInventaireComplet('${set.set_num}')" title="Analyse">📊</span>
                 </div>
 
                 <div class="qty-control">
